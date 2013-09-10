@@ -380,7 +380,8 @@ class EMRRunnerOptionStore(RunnerOptionStore):
         'ssh_bind_ports',
         'ssh_tunnel_is_open',
         'ssh_tunnel_to_job_tracker',
-        'visible_to_all_users'
+        'visible_to_all_users',
+        'supported_product'
     ]))
 
     COMBINERS = combine_dicts(RunnerOptionStore.COMBINERS, {
@@ -1297,6 +1298,11 @@ class EMRJobRunner(MRJobRunner):
             args.setdefault('api_params', {})
             args['api_params']['VisibleToAllUsers'] = 'true'
 
+        if self._opts['supported_product']:
+            if not 'api_params' in args:
+                args.setdefault('api_params', {})
+            args['api_params']['SupportedProducts.member.1'] = self._opts['supported_product']
+
         if steps:
             args['steps'] = steps
 
@@ -1317,6 +1323,9 @@ class EMRJobRunner(MRJobRunner):
             elif step['type'] == 'jar':
                 step_list.append(
                     self._build_jar_step(step, step_num, len(steps)))
+            elif step['type'] == 'hadoop_pipes':
+                step_list.append(
+                    self._build_hadoop_pipes_step(step, step_num, len(steps)))
 
         return step_list
 
@@ -1357,6 +1366,15 @@ class EMRJobRunner(MRJobRunner):
         return boto.emr.StreamingStep(**streaming_step_kwargs)
 
     def _build_jar_step(self, step, step_num, num_steps):
+        return boto.emr.JarStep(
+            name='%s: Step %d of %d' % (
+                self._job_name, step_num + 1, num_steps),
+            jar=step['jar'],
+            main_class='org.apache.hadoop.mapred.pipes.Submitter' if not step['main_class'] else step['main_class'],
+            step_args=step['step_args'],
+            action_on_failure=self._action_on_failure)
+
+    def _build_hadoop_pipes_step(self, step, step_num, num_steps):
         return boto.emr.JarStep(
             name='%s: Step %d of %d' % (
                 self._job_name, step_num + 1, num_steps),
@@ -2371,8 +2389,10 @@ class EMRJobRunner(MRJobRunner):
             # This error is raised by other version of boto when the jobflow
             # doesn't exist (some time before 2.4)
             raise IOError('Could not get job flow information')
-
-        self._address = jobflow.masterpublicdnsname
+        #print "jobflow debug"
+        #print jobflow
+        #print dir(jobflow)
+        self._address = getattr(jobflow, 'masterpublicdnsname', None)
         return self._address
 
     def _addresses_of_slaves(self):

@@ -532,6 +532,10 @@ def add_emr_opts(opt_group):
                  ' (if they have the proper policy permissions set) manage'
                  ' the job flow. If it is set to False, only the IAM user'
                  ' that created the job flow can view and manage it.'),
+        opt_group.add_option(
+            '--supported-product', dest='supported_product',
+            default=None,
+            help='Supports AWS\'s supported-product flag. This is particularly useful for running MAPR.'),
     ]
 
 

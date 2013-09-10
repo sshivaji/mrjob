@@ -124,6 +124,8 @@ def make_option_parser():
             's3_log_uri',
             's3_scratch_uri',
             's3_sync_wait_time',
+            'supported_product',
+            'visible_to_all_users'
         ),
     }
 
