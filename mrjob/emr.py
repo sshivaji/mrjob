@@ -1370,15 +1370,6 @@ class EMRJobRunner(MRJobRunner):
             name='%s: Step %d of %d' % (
                 self._job_name, step_num + 1, num_steps),
             jar=step['jar'],
-            main_class='org.apache.hadoop.mapred.pipes.Submitter' if not step['main_class'] else step['main_class'],
-            step_args=step['step_args'],
-            action_on_failure=self._action_on_failure)
-
-    def _build_hadoop_pipes_step(self, step, step_num, num_steps):
-        return boto.emr.JarStep(
-            name='%s: Step %d of %d' % (
-                self._job_name, step_num + 1, num_steps),
-            jar=step['jar'],
             main_class=step['main_class'],
             step_args=step['step_args'],
             action_on_failure=self._action_on_failure)
@@ -1488,6 +1479,7 @@ class EMRJobRunner(MRJobRunner):
 
             steps = job_flow.steps or []
             latest_lg_step_num = 0
+            print "emr_job_name:{0}".format(self._job_name)
             for i, step in enumerate(steps):
                 if LOG_GENERATING_STEP_NAME_RE.match(
                     posixpath.basename(step.jar)):
